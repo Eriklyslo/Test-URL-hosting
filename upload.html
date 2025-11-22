@@ -8,11 +8,19 @@
 
 <h2>Last opp Pokémon-kort</h2>
 
-<form id="uploadForm" method="POST" enctype="multipart/form-data"
-      action="https://eriklyslopriv.app.n8n.cloud/webhook-test/pokemon-upload">
+<form id="uploadForm" 
+      method="POST" 
+      enctype="multipart/form-data"
+      action="https://eriklyslopriv.app.n8n.cloud/webhook/pokemon-upload">
 
-    <!-- Tillater flere bilder og henter fra galleriet -->
-    <input type="file" name="data_bilde" accept="image/*" required>
+    <!-- NAVN MÅ være data_bilde[] for at n8n fanger flere filer -->
+    <input 
+        type="file" 
+        name="data_bilde[]" 
+        accept="image/*" 
+        multiple 
+        required
+    >
     <br><br>
 
     <button type="submit" style="
