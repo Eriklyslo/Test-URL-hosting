@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pokemon Upload</title>
+</head>
+<body style="font-family: Arial; padding: 30px;">
+
+<h2>Last opp Pokémon-kort</h2>
+
+<form id="uploadForm" method="POST" enctype="multipart/form-data"
+      action="https://eriklyslopriv.app.n8n.cloud/webhook-test/pokemon-upload">
+
+    <input type="file" name="data" accept="image/*" capture="environment" required>
+    <br><br>
+
+    <button type="submit" style="
+        padding: 10px 20px;
+        font-size: 18px;
+        border-radius: 8px;
+    ">Send</button>
+</form>
+
+</body>
+</html>
