@@ -3,30 +3,189 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Pokemon Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #f5f5f5;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="file"] {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            cursor: pointer;
+        }
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .preview {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .preview img {
+            max-width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 2px solid #ddd;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
 </head>
-<body style="font-family: Arial; padding: 30px;">
-
+<body>
 <h2>Last opp Pokémon-kort</h2>
+<form id="uploadForm">
+    <div class="form-group">
+        <label for="camera">📷 Ta bilde med kamera (mobil):</label>
+        <input type="file" id="camera" name="camera" accept="image/*" capture="environment">
+        <div class="preview" id="cameraPreview"></div>
+    </div>
 
-<form id="uploadForm" method="POST" enctype="multipart/form-data"
-      action="https://eriklyslopriv.app.n8n.cloud/webhook-test/pokemon-upload">
+    <div class="form-group">
+        <label for="gallery">🖼️ Velg flere bilder fra galleriet:</label>
+        <input type="file" id="gallery" name="gallery" accept="image/*" multiple>
+        <div class="preview" id="galleryPreview"></div>
+    </div>
 
-    <!-- Ett valg: Kamera (mobil åpner kamera direkte) -->
-    <input type="file" name="data[]" accept="image/*" capture="environment">
-
-    <br><br>
-
-    <!-- Flere valg fra galleriet -->
-    <input type="file" name="data[]" accept="image/*" multiple required>
-
-    <br><br>
-
-    <button type="submit" style="
-        padding: 10px 20px;
-        font-size: 18px;
-        border-radius: 8px;
-    ">Send</button>
+    <button type="submit" id="submitBtn">Send</button>
+    <div class="status" id="status"></div>
 </form>
 
+<script>
+const form = document.getElementById('uploadForm');
+const cameraInput = document.getElementById('camera');
+const galleryInput = document.getElementById('gallery');
+const submitBtn = document.getElementById('submitBtn');
+const statusDiv = document.getElementById('status');
+const cameraPreview = document.getElementById('cameraPreview');
+const galleryPreview = document.getElementById('galleryPreview');
+
+// Vis preview for kamerabilde
+cameraInput.addEventListener('change', function() {
+    cameraPreview.innerHTML = '';
+    if (this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            cameraPreview.appendChild(img);
+        };
+        reader.readAsDataURL(this.files[0]);
+    }
+});
+
+// Vis preview for galleribilder
+galleryInput.addEventListener('change', function() {
+    galleryPreview.innerHTML = '';
+    for (let file of this.files) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            galleryPreview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    statusDiv.style.display = 'none';
+    submitBtn.disabled = true;
+
+    try {
+        const formData = new FormData();
+        
+        // Legg til kamerabilde hvis det finnes
+        if (cameraInput.files[0]) {
+            formData.append('files', cameraInput.files[0], `camera-${Date.now()}.jpg`);
+        }
+        
+        // Legg til galleribilder
+        for (let file of galleryInput.files) {
+            formData.append('files', file);
+        }
+
+        // Sjekk at minst ett bilde er valgt
+        if (formData.getAll('files').length === 0) {
+            throw new Error('Vennligst velg minst ett bilde');
+        }
+
+        const response = await fetch('https://eriklyslopriv.app.n8n.cloud/webhook-test/pokemon-upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            statusDiv.className = 'status success';
+            statusDiv.textContent = '✅ Bildene ble lastet opp successfully!';
+            form.reset();
+            cameraPreview.innerHTML = '';
+            galleryPreview.innerHTML = '';
+        } else {
+            throw new Error('Server returned status: ' + response.status);
+        }
+    } catch (error) {
+        statusDiv.className = 'status error';
+        statusDiv.textContent = '❌ Feil: ' + error.message;
+    } finally {
+        statusDiv.style.display = 'block';
+        submitBtn.disabled = false;
+    }
+});
+</script>
 </body>
 </html>
